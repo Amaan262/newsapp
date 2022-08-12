@@ -1,6 +1,5 @@
-import "./App.css";
 import LoadingBar from "react-top-loading-bar";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import NavBar from "./components/NavBar";
 import News from "./components/News";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -17,7 +16,6 @@ const App = () => {
         <LoadingBar
           color="#f11946"
           progress={progress}
-          setProgress={progress}
         />
         <Routes>
           <Route

@@ -26,13 +26,12 @@ const News = (props) => {
     setArticles(parsedData.articles);
     setTotalResults(parsedData.totalResults);
     setLoading(false);
-
     props.setProgress(100);
   };
-
   useEffect(() => {
     document.title = `${firstUpCase(props.category)} | NewsMonkey`;
     UpdateNews();
+ // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // Not in use
 
@@ -46,18 +45,18 @@ const News = (props) => {
   //   UpdateNews();
   // };
   const fetchMoreData = async () => {
-    setPage(page + 1);
     const url = `https://newsapi.org/v2/top-headlines?country=${
       props.country
     }&category=${props.category}&apiKey=${props.apiKey}&page=${
       page + 1
     }&pageSize=${props.pagesize}`;
-    setLoading(true);
+    setPage(page + 1);
+    // setLoading(true);
     let data = await fetch(url);
     let parsedData = await data.json();
     setArticles(articles.concat(parsedData.articles));
     setTotalResults(parsedData.totalResults);
-    setLoading(false);
+    // setLoading(false);
   };
 
   return (
@@ -76,20 +75,12 @@ const News = (props) => {
           <div className="row my-4">
             {articles.map((element) => {
               return (
-                <div key={element.url} className="col-md-4 my-2">
+                <div className="col-md-4" key={element.url}>
                   <NewsItem
-                    title={element.title.slice(0, 45)}
-                    description={
-                      element.description === null
-                        ? ""
-                        : element.description.slice(0, 88)
-                    }
+                    title={element.title ? element.title : ""}
+                    description={element.description ? element.description : ""}
+                    imageUrl={element.urlToImage}
                     newsUrl={element.url}
-                    imageUrl={
-                      element.urlToImage === null
-                        ? "https://image.cnbcfm.com/api/v1/image/106762532-1603756611792-gettyimages-1064197298-GB211043.jpeg?v=1640194526&w=1920&h=1080"
-                        : element.urlToImage
-                    }
                     author={element.author}
                     date={element.publishedAt}
                     source={element.source.name}
@@ -106,7 +97,7 @@ const News = (props) => {
 News.defaultProps = {
   country: "in",
   pagesize: 1,
-  category: "technology",
+  category: "general",
 };
 News.propTypes = {
   country: PropTypes.string,
