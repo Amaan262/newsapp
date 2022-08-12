@@ -1,117 +1,116 @@
-import React, { Component } from "react";
+import React, { useState, useEffect } from "react";
 import Loading from "./Loading.js";
 import NewsItem from "./NewsItem";
 import PropTypes from "prop-types";
+import InfiniteScroll from "react-infinite-scroll-component";
 
-export default class News extends Component {
-  static defaultProps = {
-    country: "in",
-    pagesize: 1,
-    category: "technology",
+const News = (props) => {
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
+
+  const firstUpCase = (string) => {
+    return string.charAt(0).toUpperCase() + string.slice(1);
   };
-  static propTypes = {
-    country: PropTypes.string,
-    pagesize: PropTypes.number,
-    category: PropTypes.string,
+
+  
+  const UpdateNews = async () => {
+    props.setProgress(10);
+    const url = `https://newsapi.org/v2/top-headlines?country=${props.country}&category=${props.category}&apiKey=${props.apiKey}&page=${page}&pageSize=${props.pagesize}`;
+    setLoading(true);
+    let data = await fetch(url);
+    props.setProgress(30);
+    let parsedData = await data.json();
+    props.setProgress(70);
+    setArticles(parsedData.articles);
+    setTotalResults(parsedData.totalResults);
+    setLoading(false);
+
+    props.setProgress(100);
   };
 
-  firstUpCase=(string)=>{
-      return string.charAt(0).toUpperCase()+string.slice(1);
-  }
-  constructor(props) {
-    super(props);
-    this.state = {
-      articles: [],
-      loading: false,
-      page: 1,
-    };
-    document.title = `${this.firstUpCase(this.props.category)} | NewsMonkey`
-  }
+  useEffect(() => {
+    document.title = `${firstUpCase(props.category)} | NewsMonkey`;
+    UpdateNews();
+  }, []);
+  // Not in use
 
-  async UpdateNews() {
-    const url = `https://newsapi.org/v2/top-headlines?country=${this.props.country}&category=${this.props.category}&apiKey=f7b70e1001164e2cb7eaf452a09ccdd6&page=${this.state.page}&pageSize=${this.state.pagesize}`;
-    this.setState({ loading: true });
+  // const handlePrev = async () => {
+  //   setPage(page - 1);
+  //   UpdateNews();
+  // };
+
+  // const handleNext = async () => {
+  //   setPage(page + 1);
+  //   UpdateNews();
+  // };
+  const fetchMoreData = async () => {
+    setPage(page + 1);
+    const url = `https://newsapi.org/v2/top-headlines?country=${
+      props.country
+    }&category=${props.category}&apiKey=${props.apiKey}&page=${
+      page + 1
+    }&pageSize=${props.pagesize}`;
+    setLoading(true);
     let data = await fetch(url);
     let parsedData = await data.json();
-    this.setState({
-      articles: parsedData.articles,
-      totalResults: parsedData.totalResults,
-      loading: false,
-    });
-  }
-  
-  componentDidMount() {
-    this.UpdateNews();
-  }
-  handlePrev = async () => {
-    this.setState({
-      page: this.state.page - 1,
-    });
-    this.UpdateNews();
+    setArticles(articles.concat(parsedData.articles));
+    setTotalResults(parsedData.totalResults);
+    setLoading(false);
   };
 
-  handleNext = async () => {
-    this.setState({
-      page: this.state.page + 1,
-    });
-    this.UpdateNews();
-  };
-
-
-  render() {
-    return (
-      <>
-        <div className="container my-3">
-          <h1 className="text-center">NewsMonkey - Top Headlines from {this.firstUpCase(this.props.category)}</h1>
-          {this.state.loading && <Loading />}
+  return (
+    <>
+      <h1 className="text-center" style={{ marginTop: "90px" }}>
+        NewsMonkey - Top Headlines from {firstUpCase(props.category)}
+      </h1>
+      {loading && <Loading />}
+      <InfiniteScroll
+        dataLength={articles.length}
+        next={fetchMoreData}
+        hasMore={articles.length !== totalResults}
+        loader={<Loading />}
+      >
+        <div className="container">
           <div className="row my-4">
-            {!this.state.loading &&
-              this.state.articles.map((element) => {
-                return (
-                  <div key={element.url} className="col-md-4 my-2">
-                    <NewsItem
-                      title={element.title.slice(0, 45)}
-                      description={
-                        element.description === null
-                          ? ""
-                          : element.description.slice(0, 88)
-                      }
-                      newsUrl={element.url}
-                      imageUrl={
-                        element.urlToImage === null
-                          ? "https://image.cnbcfm.com/api/v1/image/106762532-1603756611792-gettyimages-1064197298-GB211043.jpeg?v=1640194526&w=1920&h=1080"
-                          : element.urlToImage
-                      }
-                      author={element.author}
-                      date={element.publishedAt}
-                      source={element.source.name}
-                    />
-                  </div>
-                );
-              })}
-          </div>
-          <div className="container d-flex justify-content-between">
-            <button
-              type="button"
-              disabled={this.state.page <= 1}
-              onClick={this.handlePrev}
-              className="btn btn-dark"
-            >
-              &#x2190; Previous
-            </button>
-            <button
-              type="button"
-              disabled={
-                Math.ceil(this.state.totalResults / 20) < 1 + this.state.page
-              }
-              onClick={this.handleNext}
-              className="btn btn-dark"
-            >
-              Next &#x2192;
-            </button>
+            {articles.map((element) => {
+              return (
+                <div key={element.url} className="col-md-4 my-2">
+                  <NewsItem
+                    title={element.title.slice(0, 45)}
+                    description={
+                      element.description === null
+                        ? ""
+                        : element.description.slice(0, 88)
+                    }
+                    newsUrl={element.url}
+                    imageUrl={
+                      element.urlToImage === null
+                        ? "https://image.cnbcfm.com/api/v1/image/106762532-1603756611792-gettyimages-1064197298-GB211043.jpeg?v=1640194526&w=1920&h=1080"
+                        : element.urlToImage
+                    }
+                    author={element.author}
+                    date={element.publishedAt}
+                    source={element.source.name}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
-      </>
-    );
-  }
-}
+      </InfiniteScroll>
+    </>
+  );
+};
+News.defaultProps = {
+  country: "in",
+  pagesize: 1,
+  category: "technology",
+};
+News.propTypes = {
+  country: PropTypes.string,
+  pagesize: PropTypes.number,
+  category: PropTypes.string,
+};
+export default News;
